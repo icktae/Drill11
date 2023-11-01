@@ -44,54 +44,6 @@ def time_out(e):
 
 
 
-
-# Boy Run Speed
-# fill here
-
-# Boy Action Speed
-# fill here
-
-
-
-
-
-
-
-
-
-
-class Idle:
-
-    @staticmethod
-    def enter(bird, e):
-        if bird.face_dir == -1:
-            bird.action = 2
-        elif bird.face_dir == 1:
-            bird.action = 3
-        bird.dir = 0
-        bird.frame = 0
-        bird.wait_time = get_time() # pico2d import 필요
-        pass
-
-    @staticmethod
-    def exit(bird, e):
-        if space_down(e):
-            bird.fire_ball()
-        pass
-
-    @staticmethod
-    def do(bird):
-        # boy.frame = (boy.frame + 1) % 8
-        bird.frame = (bird.frame + FRAMES_PER_ACTION * ACTION_PER_TIME * game_framework.frame_time) % 8
-        if get_time() - bird.wait_time > 2:
-            bird.state_machine.handle_event(('TIME_OUT', 0))
-
-    @staticmethod
-    def draw(bird):
-        bird.image.clip_draw(int(bird.frame) * 100, bird.action * 100, 100, 100, bird.x, bird.y)
-
-
-
 class Run:
 
     @staticmethod
@@ -116,49 +68,17 @@ class Run:
         bird.x += bird.dir * RUN_SPEED_PPS * game_framework.frame_time
         bird.x = clamp(25, bird.x, 1600 - 25)
 
-
     @staticmethod
     def draw(bird):
         bird.image.clip_draw(int(bird.frame) * 100, bird.action * 100, 100, 100, bird.x, bird.y)
 
 
-
-class Sleep:
-
-    @staticmethod
-    def enter(bird, e):
-        bird.frame = 0
-        pass
-
-    @staticmethod
-    def exit(bird, e):
-        pass
-
-    @staticmethod
-    def do(bird):
-        bird.frame = (bird.frame + FRAMES_PER_ACTION * ACTION_PER_TIME * game_framework.frame_time) % 8
-        #boy.frame = (boy.frame + 1) % 8
-
-
-
-    @staticmethod
-    def draw(bird):
-        if bird.face_dir == -1:
-            bird.image.clip_composite_draw(int(bird.frame) * 100, 200, 100, 100,
-                                           -3.141592 / 2, '', bird.x + 25, bird.y - 25, 100, 100)
-        else:
-            bird.image.clip_composite_draw(int(bird.frame) * 100, 300, 100, 100,
-                                           3.141592 / 2, '', bird.x - 25, bird.y - 25, 100, 100)
-
-
 class StateMachine:
     def __init__(self, bird):
         self.bird = bird
-        self.cur_state = Idle
+        self.cur_state = Run
         self.transitions = {
-            Idle: {right_down: Run, left_down: Run, left_up: Run, right_up: Run, time_out: Sleep, space_down: Idle},
-            Run: {right_down: Idle, left_down: Idle, right_up: Idle, left_up: Idle, space_down: Run},
-            Sleep: {right_down: Run, left_down: Run, right_up: Run, left_up: Run}
+            Run: {right_down: Run, left_down: Run, right_up: Run, left_up: Run, space_down: Run},
         }
 
     def start(self):
@@ -186,7 +106,7 @@ class StateMachine:
 
 class Bird:
     def __init__(self):
-        self.x, self.y = 400, 90
+        self.x, self.y = 400, 300
         self.frame = 0
         self.action = 3
         self.face_dir = 1
@@ -194,25 +114,7 @@ class Bird:
         self.image = load_image('bird_animation.png')
         self.state_machine = StateMachine(self)
         self.state_machine.start()
-        self.item = 'Ball'
-        self.font = load_font('ENCR10B.TTF', 16)
 
-
-    def fire_ball(self):
-
-        if self.item ==   'Ball':
-            ball = Ball(self.x, self.y, self.face_dir*10)
-            game_world.add_object(ball)
-        elif self.item == 'BigBall':
-            ball = BigBall(self.x, self.y, self.face_dir*10)
-            game_world.add_object(ball)
-        # if self.face_dir == -1:
-        #     print('FIRE BALL LEFT')
-        #
-        # elif self.face_dir == 1:
-        #     print('FIRE BALL RIGHT')
-
-        pass
 
     def update(self):
         self.state_machine.update()
@@ -222,4 +124,3 @@ class Bird:
 
     def draw(self):
         self.state_machine.draw()
-        self.font.draw(self.x - 60, self.y + 50,f'(Time: {get_time():.2f})', (255, 255, 0))
