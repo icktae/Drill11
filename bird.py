@@ -63,98 +63,97 @@ def time_out(e):
 class Idle:
 
     @staticmethod
-    def enter(boy, e):
-        if boy.face_dir == -1:
-            boy.action = 2
-        elif boy.face_dir == 1:
-            boy.action = 3
-        boy.dir = 0
-        boy.frame = 0
-        boy.wait_time = get_time() # pico2d import 필요
+    def enter(bird, e):
+        if bird.face_dir == -1:
+            bird.action = 2
+        elif bird.face_dir == 1:
+            bird.action = 3
+        bird.dir = 0
+        bird.frame = 0
+        bird.wait_time = get_time() # pico2d import 필요
         pass
 
     @staticmethod
-    def exit(boy, e):
+    def exit(bird, e):
         if space_down(e):
-            boy.fire_ball()
+            bird.fire_ball()
         pass
 
     @staticmethod
-    def do(boy):
+    def do(bird):
         # boy.frame = (boy.frame + 1) % 8
-        boy.frame = (boy.frame + FRAMES_PER_ACTION * ACTION_PER_TIME * game_framework.frame_time) % 8
-        if get_time() - boy.wait_time > 2:
-            boy.state_machine.handle_event(('TIME_OUT', 0))
+        bird.frame = (bird.frame + FRAMES_PER_ACTION * ACTION_PER_TIME * game_framework.frame_time) % 8
+        if get_time() - bird.wait_time > 2:
+            bird.state_machine.handle_event(('TIME_OUT', 0))
 
     @staticmethod
-    def draw(boy):
-        boy.image.clip_draw(int(boy.frame) * 100, boy.action * 100, 100, 100, boy.x, boy.y)
+    def draw(bird):
+        bird.image.clip_draw(int(bird.frame) * 100, bird.action * 100, 100, 100, bird.x, bird.y)
 
 
 
 class Run:
 
     @staticmethod
-    def enter(boy, e):
+    def enter(bird, e):
         if right_down(e) or left_up(e): # 오른쪽으로 RUN
-            boy.dir, boy.action, boy.face_dir = 1, 1, 1
+            bird.dir, bird.action, bird.face_dir = 1, 1, 1
         elif left_down(e) or right_up(e): # 왼쪽으로 RUN
-            boy.dir, boy.action, boy.face_dir = -1, 0, -1
+            bird.dir, bird.action, bird.face_dir = -1, 0, -1
 
     @staticmethod
-    def exit(boy, e):
+    def exit(bird, e):
         if space_down(e):
-            boy.fire_ball()
+            bird.fire_ball()
 
         pass
 
     @staticmethod
-    def do(boy):
-        boy.frame = (boy.frame + FRAMES_PER_ACTION * ACTION_PER_TIME * game_framework.frame_time) % 8
+    def do(bird):
+        bird.frame = (bird.frame + FRAMES_PER_ACTION * ACTION_PER_TIME * game_framework.frame_time) % 8
         # boy.frame = (boy.frame + 1) % 8
         #boy.x += boy.dir * 5
-        boy.x += boy.dir * RUN_SPEED_PPS * game_framework.frame_time
-        boy.x = clamp(25, boy.x, 1600-25)
+        bird.x += bird.dir * RUN_SPEED_PPS * game_framework.frame_time
+        bird.x = clamp(25, bird.x, 1600 - 25)
 
 
     @staticmethod
-    @staticmethod
-    def draw(boy):
-        boy.image.clip_draw(int(boy.frame) * 100, boy.action * 100, 100, 100, boy.x, boy.y)
+    def draw(bird):
+        bird.image.clip_draw(int(bird.frame) * 100, bird.action * 100, 100, 100, bird.x, bird.y)
 
 
 
 class Sleep:
 
     @staticmethod
-    def enter(boy, e):
-        boy.frame = 0
+    def enter(bird, e):
+        bird.frame = 0
         pass
 
     @staticmethod
-    def exit(boy, e):
+    def exit(bird, e):
         pass
 
     @staticmethod
-    def do(boy):
-        boy.frame = (boy.frame + FRAMES_PER_ACTION * ACTION_PER_TIME * game_framework.frame_time) % 8
+    def do(bird):
+        bird.frame = (bird.frame + FRAMES_PER_ACTION * ACTION_PER_TIME * game_framework.frame_time) % 8
         #boy.frame = (boy.frame + 1) % 8
 
 
 
     @staticmethod
-    def draw(boy):
-        if boy.face_dir == -1:
-            boy.image.clip_composite_draw(int(boy.frame) * 100, 200, 100, 100,
-                                          -3.141592 / 2, '', boy.x + 25, boy.y - 25, 100, 100)
+    def draw(bird):
+        if bird.face_dir == -1:
+            bird.image.clip_composite_draw(int(bird.frame) * 100, 200, 100, 100,
+                                           -3.141592 / 2, '', bird.x + 25, bird.y - 25, 100, 100)
         else:
-            boy.image.clip_composite_draw(int(boy.frame) * 100, 300, 100, 100,
-                                          3.141592 / 2, '', boy.x - 25, boy.y - 25, 100, 100)
+            bird.image.clip_composite_draw(int(bird.frame) * 100, 300, 100, 100,
+                                           3.141592 / 2, '', bird.x - 25, bird.y - 25, 100, 100)
 
 
 class StateMachine:
-    def __init__(self, boy):
-        self.boy = boy
+    def __init__(self, bird):
+        self.bird = bird
         self.cur_state = Idle
         self.transitions = {
             Idle: {right_down: Run, left_down: Run, left_up: Run, right_up: Run, time_out: Sleep, space_down: Idle},
@@ -163,36 +162,36 @@ class StateMachine:
         }
 
     def start(self):
-        self.cur_state.enter(self.boy, ('NONE', 0))
+        self.cur_state.enter(self.bird, ('NONE', 0))
 
     def update(self):
-        self.cur_state.do(self.boy)
+        self.cur_state.do(self.bird)
 
     def handle_event(self, e):
         for check_event, next_state in self.transitions[self.cur_state].items():
             if check_event(e):
-                self.cur_state.exit(self.boy, e)
+                self.cur_state.exit(self.bird, e)
                 self.cur_state = next_state
-                self.cur_state.enter(self.boy, e)
+                self.cur_state.enter(self.bird, e)
                 return True
 
         return False
 
     def draw(self):
-        self.cur_state.draw(self.boy)
+        self.cur_state.draw(self.bird)
 
 
 
 
 
-class Boy:
+class Bird:
     def __init__(self):
         self.x, self.y = 400, 90
         self.frame = 0
         self.action = 3
         self.face_dir = 1
         self.dir = 0
-        self.image = load_image('animation_sheet.png')
+        self.image = load_image('bird_animation.png')
         self.state_machine = StateMachine(self)
         self.state_machine.start()
         self.item = 'Ball'
