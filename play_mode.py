@@ -22,6 +22,7 @@ def init():
     global grass
     global boy
     global bird
+    global birds
 
     running = True
 
@@ -31,8 +32,12 @@ def init():
     boy = Boy()
     game_world.add_object(boy, 1)
 
-    bird = Bird()
-    game_world.add_object(bird, 1)
+    birds = []
+
+    for _ in range(10):
+        bird = Bird()
+        birds.append(bird)
+        game_world.add_object(bird, 1)
 
 
 def finish():
